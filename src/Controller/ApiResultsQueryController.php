@@ -24,7 +24,7 @@ class ApiResultsQueryController extends AbstractController
 {
     private const HEADER_CACHE_CONTROL = 'Cache-Control';
     private const HEADER_ETAG = 'ETag';
-    //private const HEADER_ALLOW = 'Allow';
+    private const HEADER_ALLOW = 'Allow';
     public function __construct(
         private readonly EntityManagerInterface $entityManager
     ) {
@@ -85,6 +85,35 @@ class ApiResultsQueryController extends AbstractController
             [
                 self::HEADER_CACHE_CONTROL => 'private',
                 self::HEADER_ETAG => $etag,
+            ]
+        );
+    }
+    /**
+     * @see ApiResultsQueryInterface::optionsAction()
+     */
+    #[\Symfony\Component\Routing\Attribute\Route(
+        path: "/{resultId}.{_format}",
+        name: 'options',
+        requirements: [
+            'resultId' => "\d+",
+            '_format' => "json|xml"
+        ],
+        defaults: [ 'resultId' => 0, '_format' => 'json' ],
+        methods: [ Request::METHOD_OPTIONS ],
+    )]
+    public function optionsAction(int|null $resultId): Response
+    {
+        $methods = $resultId !== 0
+            ? [ Request::METHOD_GET, Request::METHOD_PUT, Request::METHOD_DELETE ]
+            : [ Request::METHOD_GET, Request::METHOD_POST ];
+        $methods[] = Request::METHOD_OPTIONS;
+
+        return new Response(
+            null,
+            Response::HTTP_NO_CONTENT,
+            [
+                self::HEADER_ALLOW => implode(',', $methods),
+                self::HEADER_CACHE_CONTROL => 'public, immutable'
             ]
         );
     }
