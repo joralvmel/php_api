@@ -28,6 +28,8 @@ tags:
     description: 'User login'
   - name: '👥 Users'
     description: 'User management'
+  - name: '📊 Results'
+    description: 'Results management'
 paths:
   /login_check:
     options:
@@ -231,6 +233,33 @@ paths:
             Allow:
               $ref: '#/components/headers/Allow'
 
+  /results:
+    get:
+      tags: [ '📊 Results' ]
+      summary: Retrieves the collection of Result resources.
+      description: 'Returns all results for the current user.'
+      operationId: api_results_cget
+      security:
+        - MiWApiSecurity: [ ]
+      responses:
+        '200':
+          description: 'Array of results'
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  results: { description: 'Results array', type: array, items: { $ref: '#/components/schemas/Result' } }
+          headers:
+            ETag:
+              $ref: '#/components/headers/ETag'
+        '401':
+          $ref: '#/components/responses/401_Unauthorized_Response'
+        '403':
+          $ref: '#/components/responses/403_Forbidden_Response'
+        '404':
+          $ref: '#/components/responses/404_Resource_Not_Found_Response'
+
 components:
   headers:
     ETag:
@@ -279,6 +308,46 @@ components:
               href: /api/v1/users
             self:
               href: /api/v1/users/1508
+    Result:
+      type: object
+      properties:
+        id:
+          description: 'Result Id'
+          type: integer
+          format: int64
+        userId:
+          description: 'User Id'
+          type: integer
+          format: int64
+        result:
+          description: 'Result score'
+          type: number
+          format: float
+        time:
+          description: 'Result date'
+          type: string
+          format: date-time
+        _links:
+          description: link relations
+          type: object
+          properties:
+            parent:
+              type: object
+              properties: { "href": { "type": "string", "format": "url" } }
+            self:
+              type: object
+              properties: { "href": { "type": "string", "format": "url" } }
+      example:
+        result:
+          id: 1
+          userId: 2
+          result: 2000
+          time: '2024-12-23T12:00:00'
+          _links:
+            parent:
+              href: /api/v1/results
+            self:
+              href: /api/v1/results/1
     Message:
       type: object
       description: HTTP response message
@@ -376,6 +445,31 @@ components:
                 email: User_email@example.com
                 password: User_password
                 roles: [ 'ROLE_USER', 'ROLE_ADMIN' ]
+    ResultRequestBody:
+      description: '`Result` data'
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              userId:
+                description: 'User Id'
+                type: integer
+                format: int64
+              result:
+                description: 'Result score'
+                type: number
+                format: float
+              time:
+                description: 'Result date'
+                type: string
+                format: date-time
+            examples:
+              result:
+                userId: 1
+                result: 2000
+                time: '2024-12-23T12:00:00'
     LoginRequestBody:
       description: Registered user **e-mail** and **password**
       required: true

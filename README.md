@@ -57,6 +57,7 @@ Para lanzar el servidor con la aplicación en desarrollo, desde la raíz del pro
 se debe ejecutar el comando: 
 ```
 $ symfony serve [-d]
+$ php bin/console debug:router
 ```
 Antes de probar la interfaz de la API es recomendable crear al menos un usuario con permisos de administrador.
 Para conseguir este objetivo se ha proporcionado un comando disponible a través de la consola
