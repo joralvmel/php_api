@@ -76,10 +76,7 @@ class ApiResultsCommandController extends AbstractController
                 $format);
         }
 
-        $result = new Result();
-        $result->setResult($data['result']);
-        $result->setTime(new \DateTime($data['time']));
-        $result->setUser($user);
+        $result = new Result($data['result'], new \DateTime($data['time']), $user);
 
         $this->entityManager->persist($result);
         $this->entityManager->flush();
