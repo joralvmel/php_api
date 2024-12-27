@@ -25,6 +25,7 @@ class ApiResultsQueryController extends AbstractController
     private const HEADER_CACHE_CONTROL = 'Cache-Control';
     private const HEADER_ETAG = 'ETag';
     private const HEADER_ALLOW = 'Allow';
+    private const ROLE_ADMIN = 'ROLE_ADMIN';
     public function __construct(
         private readonly EntityManagerInterface $entityManager
     ) {
@@ -59,7 +60,7 @@ class ApiResultsQueryController extends AbstractController
 
         $order = strval($request->get('sort'));
         $user = $this->getUser();
-        if ($this->isGranted('ROLE_ADMIN')) {
+        if ($this->isGranted(self::ROLE_ADMIN)) {
             $results = $this->entityManager->getRepository(Result::class)->findBy([], [$order => 'ASC']);
         } else {
             $results = $this->entityManager->getRepository(Result::class)->findBy(['user' => $user], [$order => 'ASC']);
@@ -88,6 +89,67 @@ class ApiResultsQueryController extends AbstractController
             ]
         );
     }
+
+    /**
+     * @see ApiResultsQueryInterface::getAction()
+     *
+     * @throws JsonException
+     */
+    #[Route(
+        path: "/{resultId}.{_format}",
+        name: 'get',
+        requirements: [
+            'resultId' => "\d+",
+            '_format' => "json|xml"
+        ],
+        defaults: ['_format' => 'json'],
+        methods: [Request::METHOD_GET],
+    )]
+    public function getAction(Request $request, int $resultId): Response
+    {
+        $format = Utils::getFormat($request);
+        if (!$this->isGranted('IS_AUTHENTICATED_FULLY')) {
+            return Utils::errorMessage(
+                Response::HTTP_UNAUTHORIZED,
+                '`Unauthorized`: Invalid credentials.',
+                $format);
+        }
+
+        $result = $this->entityManager->getRepository(Result::class)->find($resultId);
+
+        if (!$result) {
+            return Utils::errorMessage(
+                Response::HTTP_NOT_FOUND,
+                null,
+                $format);
+        }
+
+        $currentUser = $this->getUser();
+        if ($result->getUser()->getId() !== $currentUser->getId() && !$this->isGranted(self::ROLE_ADMIN)) {
+            return Utils::errorMessage(
+                Response::HTTP_FORBIDDEN,
+                '`Forbidden`: You don\'t have permission to access.',
+                $format);
+        }
+
+        $etag = md5(json_encode($result, JSON_THROW_ON_ERROR));
+        if (($etags = $request->getETags()) && (in_array($etag, $etags) || in_array('*', $etags))) {
+            return new Response(
+                null,
+                Response::HTTP_NOT_MODIFIED);
+        }
+
+        return Utils::apiResponse(
+            Response::HTTP_OK,
+            ['result' => $result],
+            $format,
+            [
+                'Cache-Control' => 'private',
+                'ETag' => $etag,
+            ]
+        );
+    }
+
     /**
      * @see ApiResultsQueryInterface::optionsAction()
      */
