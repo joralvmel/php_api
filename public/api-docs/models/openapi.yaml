@@ -384,6 +384,25 @@ paths:
           headers:
             Allow:
               $ref: '#/components/headers/Allow'
+  '/results/user/{userId}':
+    delete:
+      tags: [ '📊 Results' ]
+      summary: Removes all Result resources for a user.
+      description: 'Deletes all results for the user identified by `userId`.'
+      operationId: api_results_delete_all
+      parameters:
+        - $ref: '#/components/parameters/userId'
+      security:
+        - MiWApiSecurity: [ ]
+      responses:
+        '204':
+          description: 'All results deleted <Response body is empty>'
+        '401':
+          $ref: '#/components/responses/401_Unauthorized_Response'
+        '403':
+          $ref: '#/components/responses/403_Forbidden_Response'
+        '404':
+          $ref: '#/components/responses/404_Resource_Not_Found_Response'
 
 components:
   headers:

@@ -189,4 +189,54 @@ class ApiResultsCommandController extends AbstractController
 
         return Utils::apiResponse(Response::HTTP_NO_CONTENT);
     }
+
+    /**
+     * @see ApiResultsCommandInterface::deleteAllAction()
+     *
+     * @throws JsonException
+     */
+    #[Route(
+        path: "/user/{userId}.{_format}",
+        name: 'delete_all',
+        requirements: [
+            'userId' => "\d+",
+            '_format' => "json|xml"
+        ],
+        defaults: ['_format' => null],
+        methods: [Request::METHOD_DELETE],
+    )]
+    public function deleteAllAction(int $userId, Request $request): Response
+    {
+        $format = Utils::getFormat($request);
+        if (!$this->isGranted('IS_AUTHENTICATED_FULLY')) {
+            return Utils::errorMessage(
+                Response::HTTP_UNAUTHORIZED,
+                'Unauthorized: Invalid credentials.',
+                $format);
+        }
+
+        $user = $this->getUser();
+        if ($user->getId() !== $userId && !$this->isGranted(self::ROLE_ADMIN)) {
+            return Utils::errorMessage(
+                Response::HTTP_FORBIDDEN,
+                'Forbidden: You don\'t have permission to delete results for this user.',
+                $format);
+        }
+
+        $results = $this->entityManager->getRepository(Result::class)->findBy(['user' => $userId]);
+
+        if (!$results) {
+            return Utils::errorMessage(
+                Response::HTTP_NOT_FOUND,
+                'Not Found: No results found for this user.',
+                $format);
+        }
+
+        foreach ($results as $result) {
+            $this->entityManager->remove($result);
+        }
+        $this->entityManager->flush();
+
+        return Utils::apiResponse(Response::HTTP_NO_CONTENT);
+    }
 }
