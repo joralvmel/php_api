@@ -86,4 +86,107 @@ class ApiResultsCommandController extends AbstractController
 
         return Utils::apiResponse(Response::HTTP_CREATED, $result, $format);
     }
+
+    /**
+     * @see ApiResultsCommandInterface::putAction()
+     *
+     * @throws JsonException
+     */
+    #[Route(
+        path: "/{resultId}.{_format}",
+        name: 'put',
+        requirements: [
+            'resultId' => "\d+",
+            '_format' => "json|xml"
+        ],
+        defaults: ['_format' => null],
+        methods: [Request::METHOD_PUT],
+    )]
+    public function putAction(Request $request, int $resultId): Response
+    {
+        $format = Utils::getFormat($request);
+        if (!$this->isGranted('IS_AUTHENTICATED_FULLY')) {
+            return Utils::errorMessage(
+                Response::HTTP_UNAUTHORIZED,
+                'Unauthorized: Invalid credentials.',
+                $format);
+        }
+
+        $user = $this->getUser();
+        $result = $this->entityManager->getRepository(Result::class)->find($resultId);
+
+        if (!$result) {
+            return Utils::errorMessage(
+                Response::HTTP_NOT_FOUND,
+                'Not Found: Result not found.',
+                $format);
+        }
+
+        if ($result->getUser()->getId() !== $user->getId() && !$this->isGranted(self::ROLE_ADMIN)) {
+            return Utils::errorMessage(
+                Response::HTTP_FORBIDDEN,
+                'Forbidden: You don\'t have permission to access.',
+                $format);
+        }
+
+        $data = json_decode($request->getContent(), true);
+        if (isset($data['result'])) {
+            $result->setResult($data['result']);
+        }
+        if (isset($data['time'])) {
+            $result->setTime(new \DateTime($data['time']));
+        }
+
+        $this->entityManager->flush();
+
+        return Utils::apiResponse(Response::HTTP_OK, $result, $format);
+    }
+
+    /**
+     * @see ApiResultsCommandInterface::deleteAction()
+     *
+     * @throws JsonException
+     */
+    #[Route(
+        path: "/{resultId}.{_format}",
+        name: 'delete',
+        requirements: [
+            'id' => "\d+",
+            '_format' => "json|xml"
+        ],
+        defaults: ['_format' => null],
+        methods: [Request::METHOD_DELETE],
+    )]
+    public function deleteAction(int $resultId, Request $request): Response
+    {
+        $format = Utils::getFormat($request);
+        if (!$this->isGranted('IS_AUTHENTICATED_FULLY')) {
+            return Utils::errorMessage(
+                Response::HTTP_UNAUTHORIZED,
+                'Unauthorized: Invalid credentials.',
+                $format);
+        }
+
+        $user = $this->getUser();
+        $result = $this->entityManager->getRepository(Result::class)->find($resultId);
+
+        if (!$result) {
+            return Utils::errorMessage(
+                Response::HTTP_NOT_FOUND,
+                'Not Found: Result not found.',
+                $format);
+        }
+
+        if ($result->getUser()->getId() !== $user->getId() && !$this->isGranted(self::ROLE_ADMIN)) {
+            return Utils::errorMessage(
+                Response::HTTP_FORBIDDEN,
+                'Forbidden: You don\'t have permission to access.',
+                $format);
+        }
+
+        $this->entityManager->remove($result);
+        $this->entityManager->flush();
+
+        return Utils::apiResponse(Response::HTTP_NO_CONTENT);
+    }
 }
