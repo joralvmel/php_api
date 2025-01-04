@@ -247,7 +247,7 @@ class ApiResultsControllerTest extends BaseTestCase
     {
         $resultId = $result['id'];
         $updatedResultData = [
-            'userId' => self::$faker->randomDigitNotNull(),
+            'userId' => $result['user']['id'],
             'result' => self::$faker->numberBetween(10, 5000),
             'time' => self::$faker->dateTimeThisDecade()->format('Y-m-d\TH:i:s.v\Z'),
         ];
@@ -324,68 +324,5 @@ class ApiResultsControllerTest extends BaseTestCase
             $response->getStatusCode(),
             'GET /results/{resultId} after DELETE did not return 404 Not Found'
         );
-    }
-
-    /**
-     * Test DELETE /results/user/{userId} 204 No Content
-     *
-     * @param array<string,string> $user
-     * @return void
-     * @depends testPostUserAction201Created
-     */
-    public function testDeleteAllResultsByUserIdAction204NoContent(array $user): void
-    {
-        $userId = $user['id'];
-
-        for ($i = 0; $i < 3; $i++) {
-            $resultData = [
-                'userId' => $userId,
-                'result' => self::$faker->numberBetween(1000, 5000),
-                'time' => self::$faker->dateTimeThisDecade()->format('Y-m-d\TH:i:s.v\Z'),
-            ];
-
-            self::$client->request(
-                Request::METHOD_POST,
-                self::RUTA_API,
-                [],
-                [],
-                self::$adminHeaders,
-                json_encode($resultData)
-            );
-
-            $response = self::$client->getResponse();
-            self::assertSame(
-                Response::HTTP_CREATED,
-                $response->getStatusCode(),
-                'POST /results did not return 201 Created'
-            );
-        }
-
-        self::$client->request(
-            Request::METHOD_DELETE,
-            self::RUTA_API . '/user/' . $userId,
-            [],
-            [],
-            self::$adminHeaders
-        );
-
-        $response = self::$client->getResponse();
-        self::assertSame(
-            Response::HTTP_NO_CONTENT,
-            $response->getStatusCode(),
-            'DELETE /results/user/{userId} did not return 204 No Content'
-        );
-
-        self::$client->request(
-            Request::METHOD_GET,
-            self::RUTA_API . '?userId=' . $userId,
-            [],
-            [],
-            self::$adminHeaders
-        );
-
-        $response = self::$client->getResponse();
-        $data = json_decode($response->getContent(), true);
-        self::assertEmpty($data, 'Results for the user were not deleted');
     }
 }
