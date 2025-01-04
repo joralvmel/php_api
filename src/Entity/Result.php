@@ -36,11 +36,11 @@ class Result implements \JsonSerializable
      * @param float               $result
      * @param \DateTimeInterface  $time
      */
-    public function __construct(int $result, \DateTime $time, User $user)
+    public function __construct(User $user, float $result, \DateTimeInterface $time)
     {
+        $this->user = $user;
         $this->result = $result;
         $this->time = $time;
-        $this->user = $user;
     }
 
     public function getId(): ?int

@@ -10,7 +10,6 @@ use JsonException;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
-use Symfony\Component\HttpKernel\Exception\AccessDeniedHttpException;
 use Symfony\Component\Routing\Annotation\Route;
 
 #[Route(
@@ -76,7 +75,7 @@ class ApiResultsCommandController extends AbstractController
                 $format);
         }
 
-        $result = new Result($data['result'], new \DateTime($data['time']), $user);
+        $result = new Result($user, $data['result'], new \DateTime($data['time']));
 
         $this->entityManager->persist($result);
         $this->entityManager->flush();
